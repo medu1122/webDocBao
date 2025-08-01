@@ -2,10 +2,25 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PenSquare, CheckCircle, PlusCircle } from "lucide-react";
 import Link from "next/link";
-import articleStore from "@/lib/mock-data";
+import type { Article } from "@/lib/types";
+
+async function getArticles() {
+  try {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/articles`, { cache: 'no-store' });
+    if (!res.ok) {
+      console.error('Failed to fetch articles:', await res.text());
+      return [];
+    }
+    const data = await res.json();
+    return data.articles || [];
+  } catch (error) {
+    console.error('Error fetching articles:', error);
+    return [];
+  }
+}
 
 export default async function AdminDashboard() {
-  const articles = await articleStore.getArticles();
+  const articles = await getArticles();
   const publishedCount = articles.filter(a => a.status === 'published').length;
   const draftCount = articles.filter(a => a.status === 'draft').length;
 
@@ -62,7 +77,7 @@ export default async function AdminDashboard() {
         <Card>
           <CardContent className="p-0">
             <div className="divide-y">
-              {articles.slice(0, 5).map(article => (
+              {articles.slice(0, 5).map((article: Article) => (
                 <div key={article.id} className="flex items-center justify-between p-4">
                   <div>
                     <Link href={`/admin/articles/edit/${article.id}`} className="font-medium hover:underline">{article.title}</Link>

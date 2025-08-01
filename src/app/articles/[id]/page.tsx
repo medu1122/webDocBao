@@ -1,4 +1,3 @@
-import articleStore from '@/lib/mock-data';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import Image from 'next/image';
@@ -8,44 +7,63 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, UserCircle, Calendar } from 'lucide-react';
 import { Newspaper } from 'lucide-react';
+import type { Article } from '@/lib/types';
 
 type Props = {
   params: { id: string };
 };
 
+async function getArticle(id: string): Promise<Article | null> {
+    try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/articles/${id}`, { cache: 'no-store' });
+        if (!res.ok) {
+            return null;
+        }
+        const article = await res.json();
+        // The API returns _id, but our component expects id.
+        return { ...article, id: article._id };
+    } catch (error) {
+        console.error('Failed to fetch article', error);
+        return null;
+    }
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const article = await articleStore.getArticleById(params.id);
+  const article = await getArticle(params.id);
 
   if (!article || article.status !== 'published') {
     return {
       title: 'Article Not Found',
     };
   }
+  
+  const metaTitle = article.metaTitle || article.title;
+  const metaDescription = article.metaDescription || article.summary;
 
   return {
-    title: article.metaTitle,
-    description: article.metaDescription,
+    title: metaTitle,
+    description: metaDescription,
     openGraph: {
-      title: article.metaTitle,
-      description: article.metaDescription,
+      title: metaTitle,
+      description: metaDescription,
       images: [
         {
-          url: article.featuredImage,
+          url: article.featuredImage || article.coverImage,
           width: 1200,
           height: 630,
           alt: article.title,
         },
       ],
       type: 'article',
-      publishedTime: article.publicationDate,
+      publishedTime: article.publicationDate || article.created_at,
       authors: [article.author],
       tags: article.tags,
     },
     twitter: {
       card: 'summary_large_image',
-      title: article.metaTitle,
-      description: article.metaDescription,
-      images: [article.featuredImage],
+      title: metaTitle,
+      description: metaDescription,
+      images: [article.featuredImage || article.coverImage],
     },
   };
 }
@@ -58,11 +76,16 @@ const getAiHint = (tags: string[]) => {
 }
 
 export default async function ArticlePage({ params }: Props) {
-  const article = await articleStore.getArticleById(params.id);
+  const article = await getArticle(params.id);
 
   if (!article || article.status !== 'published') {
     notFound();
   }
+  
+  const publicationDate = article.publicationDate || article.created_at;
+  const featuredImage = article.featuredImage || article.coverImage;
+  const content = article.content || (article.content_blocks.find(b => b.type === 'text')?.data as string) || '';
+
 
   return (
     <div className="bg-background min-h-screen">
@@ -94,8 +117,8 @@ export default async function ArticlePage({ params }: Props) {
               </div>
               <div className="flex items-center gap-2">
                 <Calendar className="w-5 h-5" />
-                <time dateTime={article.publicationDate}>
-                  {format(new Date(article.publicationDate), 'MMMM d, yyyy')}
+                <time dateTime={publicationDate}>
+                  {format(new Date(publicationDate), 'MMMM d, yyyy')}
                 </time>
               </div>
             </div>
@@ -103,7 +126,7 @@ export default async function ArticlePage({ params }: Props) {
 
           <div className="relative aspect-video rounded-lg overflow-hidden mb-8 shadow-lg">
             <Image
-              src={article.featuredImage}
+              src={featuredImage}
               alt={article.title}
               fill
               className="object-cover"
@@ -113,7 +136,7 @@ export default async function ArticlePage({ params }: Props) {
           </div>
 
           <div className="prose prose-lg dark:prose-invert max-w-none prose-p:text-foreground/80 prose-headings:text-foreground">
-            {article.content.split('\\n').map((paragraph, index) => (
+            {content.split('\n').map((paragraph, index) => (
               <p key={index} className="mb-4 leading-relaxed">{paragraph}</p>
             ))}
           </div>

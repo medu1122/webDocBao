@@ -1,11 +1,27 @@
-import articleStore from '@/lib/mock-data';
 import { ArticleCard } from '@/components/article-card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Newspaper } from 'lucide-react';
+import type { Article } from '@/lib/types';
+
+async function getPublishedArticles() {
+  try {
+    // We are using localhost here because this is a server component
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/articles?status=published`, { cache: 'no-store' });
+    if (!res.ok) {
+      console.error('Failed to fetch articles:', await res.text());
+      return [];
+    }
+    const data = await res.json();
+    return data.articles || [];
+  } catch (error) {
+    console.error('Error fetching articles:', error);
+    return [];
+  }
+}
 
 export default async function Home() {
-  const articles = await articleStore.getPublishedArticles();
+  const articles = await getPublishedArticles();
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
@@ -30,7 +46,7 @@ export default async function Home() {
         
         {articles.length > 0 ? (
           <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3 animate-fade-in-up">
-            {articles.map((article, index) => (
+            {articles.map((article: Article, index: number) => (
               <div key={article.id} style={{ animationDelay: `${index * 100}ms` }} className="animate-fade-in-up">
                 <ArticleCard article={article} />
               </div>

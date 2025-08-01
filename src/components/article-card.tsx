@@ -9,9 +9,15 @@ import { format } from 'date-fns';
 import { ArrowRight } from 'lucide-react';
 
 export function ArticleCard({ article }: { article: Article }) {
-  const truncatedContent = article.content.length > 100 
-    ? article.content.substring(0, 100) + '...' 
-    : article.content;
+    const content = article.content || article.summary || '';
+    const publicationDate = article.publicationDate || article.created_at || new Date().toISOString();
+    const featuredImage = article.featuredImage || article.coverImage || 'https://placehold.co/1200x600.png';
+    const id = article.id || article._id;
+
+
+  const truncatedContent = content.length > 100 
+    ? content.substring(0, 100) + '...' 
+    : content;
 
   const getAiHint = (tags: string[]) => {
     if (tags.includes('AI')) return 'future AI';
@@ -21,12 +27,12 @@ export function ArticleCard({ article }: { article: Article }) {
   }
 
   return (
-    <Link href={`/articles/${article.id}`} className="group block">
+    <Link href={`/articles/${id}`} className="group block">
       <Card className="flex flex-col h-full overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
         <CardHeader className="p-0">
           <div className="aspect-video relative overflow-hidden">
             <Image
-              src={article.featuredImage}
+              src={featuredImage}
               alt={article.title}
               fill
               className="object-cover transition-transform duration-300 group-hover:scale-105"
@@ -49,7 +55,7 @@ export function ArticleCard({ article }: { article: Article }) {
             ))}
           </div>
           <div className="w-full flex justify-between items-center text-sm text-muted-foreground">
-            <span>{format(new Date(article.publicationDate), 'MMM d, yyyy')}</span>
+            <span>{format(new Date(publicationDate), 'MMM d, yyyy')}</span>
             <div className="flex items-center gap-1 text-primary group-hover:gap-2 transition-all duration-300">
               Read More
               <ArrowRight className="w-4 h-4" />

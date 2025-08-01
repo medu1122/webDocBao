@@ -26,7 +26,8 @@ const articleFormSchema = z.object({
   tags: z.array(z.string()).min(1, 'Please add at least one tag.'),
   metaTitle: z.string().min(3, 'Meta title must be at least 3 characters.'),
   metaDescription: z.string().min(10, 'Meta description must be at least 10 characters.'),
-  status: z.enum(['draft', 'published']),
+  status: z.enum(['draft', 'published', 'archived']),
+  category: z.string().min(2, "Category is required")
 });
 
 type ArticleFormValues = z.infer<typeof articleFormSchema>;
@@ -37,19 +38,22 @@ export function ArticleForm({ article }: { article?: Article }) {
   const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
   const { toast } = useToast();
   const router = useRouter();
+  
+  const defaultContent = article?.content || (article?.content_blocks?.find(b => b.type === 'text')?.data as string) || '';
 
   const form = useForm<ArticleFormValues>({
     resolver: zodResolver(articleFormSchema),
     defaultValues: {
-      id: article?.id,
+      id: article?.id || article?._id,
       title: article?.title || '',
-      content: article?.content || '',
-      author: article?.author || 'Admin',
-      featuredImage: article?.featuredImage || '',
+      content: defaultContent,
+      author: article?.author_id || article?.author || 'Admin',
+      featuredImage: article?.featuredImage || article?.coverImage || '',
       tags: article?.tags || [],
-      metaTitle: article?.metaTitle || '',
-      metaDescription: article?.metaDescription || '',
+      metaTitle: article?.metaTitle || article?.title || '',
+      metaDescription: article?.metaDescription || article?.summary || '',
       status: article?.status || 'draft',
+      category: article?.category || 'Technology'
     },
   });
 
@@ -65,10 +69,13 @@ export function ArticleForm({ article }: { article?: Article }) {
       const result = await createOrUpdateArticle(formData);
       
       if (result?.error) {
+        const errorMessage = Array.isArray(result.error._server) 
+            ? result.error._server.join(', ')
+            : "Please check the form for errors and try again.";
         toast({
             variant: "destructive",
             title: "Error saving article",
-            description: "Please check the form for errors and try again.",
+            description: errorMessage,
         });
       } else {
         toast({
@@ -155,7 +162,7 @@ export function ArticleForm({ article }: { article?: Article }) {
               <CardContent className="space-y-4">
                 <FormField control={form.control} name="author" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Author</FormLabel>
+                    <FormLabel>Author ID</FormLabel>
                     <FormControl><Input {...field} /></FormControl>
                     <FormMessage />
                   </FormItem>
@@ -168,6 +175,7 @@ export function ArticleForm({ article }: { article?: Article }) {
                       <SelectContent>
                         <SelectItem value="draft">Draft</SelectItem>
                         <SelectItem value="published">Published</SelectItem>
+                        <SelectItem value="archived">Archived</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -181,6 +189,22 @@ export function ArticleForm({ article }: { article?: Article }) {
                 <CardTitle>Details</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
+              <FormField control={form.control} name="category" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Category</FormLabel>
+                     <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl><SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger></FormControl>
+                      <SelectContent>
+                        <SelectItem value="giao-thong">Giao thông</SelectItem>
+                        <SelectItem value="xa-hoi">Xã hội</SelectItem>
+                        <SelectItem value="the-gioi">Thế giới</SelectItem>
+                        <SelectItem value="kinh-doanh">Kinh doanh</SelectItem>
+                        <SelectItem value="cong-nghe">Công nghệ</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )} />
                 <FormField control={form.control} name="featuredImage" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Featured Image URL</FormLabel>

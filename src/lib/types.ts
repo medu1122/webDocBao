@@ -1,12 +1,13 @@
-export type Article = {
-  id: string;
-  title: string;
-  content: string;
-  author: string;
-  publicationDate: string;
-  featuredImage: string;
-  tags: string[];
-  metaTitle: string;
-  metaDescription: string;
-  status: 'draft' | 'published';
+import { IArticle } from "./models/Article";
+
+export type Article = Omit<IArticle, "_id"> & { id: string } & {
+    _id: string;
+    publicationDate: string;
+    created_at: string;
+    summary: string;
+    metaTitle: string;
+    metaDescription: string;
+    content: string;
+    author: string;
+    featuredImage: string;
 };

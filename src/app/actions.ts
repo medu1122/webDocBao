@@ -2,10 +2,10 @@
 
 import { z } from 'zod';
 import { suggestArticleTags } from '@/ai/flows/suggest-article-tags';
-import articleStore from '@/lib/mock-data';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import type { Article } from '@/lib/types';
+import { generateSlug } from '@/lib/utils/slug';
 
 const articleSchema = z.object({
   id: z.string().optional(),
@@ -13,10 +13,11 @@ const articleSchema = z.object({
   content: z.string().min(1, 'Content is required'),
   author: z.string().min(1, 'Author is required'),
   featuredImage: z.string().url('Must be a valid URL'),
-  tags: z.string().transform((val) => val.split(',').filter(tag => tag.trim() !== '')),
+  tags: z.string().transform((val) => val.split(',').map(tag => tag.trim()).filter(tag => tag !== '')),
   metaTitle: z.string().min(1, 'Meta title is required'),
   metaDescription: z.string().min(1, 'Meta description is required'),
   status: z.enum(['draft', 'published']),
+  category: z.string().optional(),
 });
 
 export async function createOrUpdateArticle(formData: FormData) {
@@ -29,15 +30,53 @@ export async function createOrUpdateArticle(formData: FormData) {
         };
     }
 
+    const { id, title, content, author, featuredImage, tags, metaTitle, metaDescription, status } = parsed.data;
+
+    const articleData = {
+        title,
+        slug: generateSlug(title),
+        summary: metaDescription,
+        category: parsed.data.category || 'uncategorized',
+        tags,
+        coverImage: featuredImage,
+        author_id: author, 
+        content_blocks: [{ type: 'text', data: content }],
+        status,
+        // The mock-data compatible fields
+        content,
+        author,
+        featuredImage,
+        metaTitle,
+        metaDescription,
+    };
+
     try {
-        if (parsed.data.id) {
-            await articleStore.updateArticle(parsed.data.id, parsed.data as Partial<Article>);
-        } else {
-            await articleStore.addArticle(parsed.data as Omit<Article, 'id' | 'publicationDate'>);
+        const apiUrl = id 
+            ? `${process.env.NEXT_PUBLIC_API_URL}/api/articles/${id}`
+            : `${process.env.NEXT_PUBLIC_API_URL}/api/articles`;
+
+        const method = id ? 'PUT' : 'POST';
+
+        const response = await fetch(apiUrl, {
+            method,
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(articleData),
+        });
+
+        if (!response.ok) {
+            const errorBody = await response.json();
+            console.error("API Error:", errorBody);
+            return {
+                error: { _server: [errorBody.error || `Failed to ${id ? 'update' : 'create'} article.`] },
+            };
         }
+
     } catch (e) {
+        console.error("Request Error:", e);
         return {
-            error: { _server: ['Failed to save article.'] },
+            error: { _server: ['Failed to save article. Please check your connection.'] },
         };
     }
 

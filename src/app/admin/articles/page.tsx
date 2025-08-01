@@ -1,4 +1,3 @@
-import articleStore from '@/lib/mock-data';
 import {
   Table,
   TableBody,
@@ -19,9 +18,25 @@ import {
     DropdownMenuTrigger,
   } from "@/components/ui/dropdown-menu";
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import type { Article } from '@/lib/types';
+
+async function getArticles() {
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/articles`, { cache: 'no-store' });
+      if (!res.ok) {
+        console.error('Failed to fetch articles:', await res.text());
+        return [];
+      }
+      const data = await res.json();
+      return data.articles || [];
+    } catch (error) {
+      console.error('Error fetching articles:', error);
+      return [];
+    }
+  }
 
 export default async function ArticlesPage() {
-    const articles = await articleStore.getArticles();
+    const articles = await getArticles();
     
     return (
         <div className="space-y-6">
@@ -50,7 +65,7 @@ export default async function ArticlesPage() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {articles.map((article) => (
+                            {articles.map((article: Article) => (
                                 <TableRow key={article.id}>
                                     <TableCell className="font-medium">{article.title}</TableCell>
                                     <TableCell>
