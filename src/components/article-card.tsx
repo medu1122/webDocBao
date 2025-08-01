@@ -24,7 +24,7 @@ export function ArticleCard({ article }: { article: Article }) {
     ? content.substring(0, 100) + '...' 
     : content;
 
-  const getAiHint = (tags: string[]) => {
+  const getAiHint = (tags: string[] = []) => {
     if (tags.includes('AI')) return 'future AI';
     if (tags.includes('Sustainability')) return 'sustainable living';
     if (tags.includes('Remote Work')) return 'remote work';
@@ -32,7 +32,7 @@ export function ArticleCard({ article }: { article: Article }) {
   }
 
   return (
-    <Link href={`/articles/${id}`} className="group block">
+    <Link href={`/read/${slug}`} className="group block">
       <Card className="flex flex-col h-full overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
         <CardHeader className="p-0">
                      <div className="aspect-video relative overflow-hidden">

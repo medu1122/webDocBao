@@ -117,7 +117,7 @@ export default function ArticlesPage() {
                   </Badge>
                 </div>
                 <CardTitle className="text-xl line-clamp-2">
-                  <Link href={`/articles/${article._id}`} className="hover:text-blue-600">
+                  <Link href={`/read/${article.slug}`} className="hover:text-blue-600">
                     {article.title}
                   </Link>
                 </CardTitle>
