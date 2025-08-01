@@ -6,13 +6,23 @@ import type { Article } from '@/lib/types';
 
 async function getPublishedArticles() {
   try {
-    // We are using localhost here because this is a server component
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/articles?status=published`, { cache: 'no-store' });
+    // Use relative URL for server component
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9002';
+    console.log('Fetching articles from:', `${baseUrl}/api/articles?status=published`);
+    
+    const res = await fetch(`${baseUrl}/api/articles?status=published`, { 
+      cache: 'no-store',
+      next: { revalidate: 0 }
+    });
+    
     if (!res.ok) {
-      console.error('Failed to fetch articles:', await res.text());
+      const errorText = await res.text();
+      console.error('Failed to fetch articles:', res.status, errorText);
       return [];
     }
+    
     const data = await res.json();
+    console.log('Articles data:', data);
     return data.articles || [];
   } catch (error) {
     console.error('Error fetching articles:', error);
@@ -47,7 +57,7 @@ export default async function Home() {
         {articles.length > 0 ? (
           <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3 animate-fade-in-up">
             {articles.map((article: Article, index: number) => (
-              <div key={article.id} style={{ animationDelay: `${index * 100}ms` }} className="animate-fade-in-up">
+              <div key={article._id} style={{ animationDelay: `${index * 100}ms` }} className="animate-fade-in-up">
                 <ArticleCard article={article} />
               </div>
             ))}

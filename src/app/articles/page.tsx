@@ -93,15 +93,20 @@ export default function ArticlesPage() {
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {articles.map((article) => (
             <Card key={article._id} className="hover:shadow-lg transition-shadow">
-              {article.coverImage && (
-                <div className="aspect-video overflow-hidden rounded-t-lg">
-                  <img 
-                    src={article.coverImage} 
-                    alt={article.title}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              )}
+                             {article.coverImage && !article.coverImage.includes('yourcdn.com') && (
+                 <div className="aspect-video overflow-hidden rounded-t-lg">
+                   <img 
+                     src={article.coverImage} 
+                     alt={article.title}
+                     className="w-full h-full object-cover"
+                     onError={(e) => {
+                       // Hide image if it fails to load
+                       const target = e.target as HTMLImageElement;
+                       target.style.display = 'none';
+                     }}
+                   />
+                 </div>
+               )}
               <CardHeader>
                 <div className="flex items-center justify-between mb-2">
                   <Badge variant="outline">{article.category}</Badge>

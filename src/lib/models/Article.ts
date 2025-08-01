@@ -85,7 +85,7 @@ const ArticleSchema: Schema = new Schema({
 
 // Create index for better search performance
 ArticleSchema.index({ title: 'text', summary: 'text', tags: 'text' });
-ArticleSchema.index({ slug: 1 });
+// Note: slug index is automatically created by unique: true constraint
 ArticleSchema.index({ category: 1 });
 ArticleSchema.index({ status: 1 });
 ArticleSchema.index({ created_at: -1 });

@@ -11,8 +11,13 @@ import { ArrowRight } from 'lucide-react';
 export function ArticleCard({ article }: { article: Article }) {
     const content = article.content || article.summary || '';
     const publicationDate = article.publicationDate || article.created_at || new Date().toISOString();
-    const featuredImage = article.featuredImage || article.coverImage || 'https://placehold.co/1200x600.png';
-    const id = article.id || article._id;
+    // Use placeholder image if coverImage is from yourcdn.com, empty, or invalid
+    const featuredImage = article.coverImage && 
+      !article.coverImage.includes('yourcdn.com') && 
+      !article.coverImage.includes('undefined')
+      ? article.coverImage 
+      : 'https://placehold.co/1200x600.png';
+    const id = article._id;
 
 
   const truncatedContent = content.length > 100 
@@ -30,15 +35,20 @@ export function ArticleCard({ article }: { article: Article }) {
     <Link href={`/articles/${id}`} className="group block">
       <Card className="flex flex-col h-full overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
         <CardHeader className="p-0">
-          <div className="aspect-video relative overflow-hidden">
-            <Image
-              src={featuredImage}
-              alt={article.title}
-              fill
-              className="object-cover transition-transform duration-300 group-hover:scale-105"
-              data-ai-hint={getAiHint(article.tags)}
-            />
-          </div>
+                     <div className="aspect-video relative overflow-hidden">
+             <Image
+               src={featuredImage}
+               alt={article.title}
+               fill
+               className="object-cover transition-transform duration-300 group-hover:scale-105"
+               data-ai-hint={getAiHint(article.tags)}
+               onError={(e) => {
+                 // Fallback to placeholder if image fails to load
+                 const target = e.target as HTMLImageElement;
+                 target.src = 'https://placehold.co/1200x600.png';
+               }}
+             />
+           </div>
           <div className="p-6 pb-2">
             <CardTitle className="text-xl leading-tight">
               {article.title}

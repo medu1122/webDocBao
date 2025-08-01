@@ -9,6 +9,15 @@ export async function GET(
 ) {
   try {
     await connectDB();
+    
+    // Validate params
+    if (!params || !params.id) {
+      return NextResponse.json(
+        { error: 'Article ID is required' },
+        { status: 400 }
+      );
+    }
+    
     const article = await Article.findById(params.id);
     
     if (!article) {

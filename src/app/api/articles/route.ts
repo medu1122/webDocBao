@@ -6,13 +6,50 @@ import Article from '@/lib/models/Article';
 export async function GET(request: NextRequest) {
   try {
     await connectDB();
-    const { searchParams } = new URL(request.url);
+    
+    // Debug logging
+    console.log('Request URL:', request.url);
+    console.log('Request method:', request.method);
+    console.log('Request headers:', Object.fromEntries(request.headers.entries()));
+    
+    // Handle case where request.url might be undefined
+    let searchParams: URLSearchParams;
+    
+    try {
+      if (!request.url) {
+        console.error('Request URL is undefined');
+        return NextResponse.json(
+          { error: 'Invalid request URL' },
+          { status: 400 }
+        );
+      }
+      
+    
+      let fullUrl = request.url;
+      if (!fullUrl.startsWith('http')) {
+        const host = request.headers.get('host');
+        const protocol = request.headers.get('x-forwarded-proto') || 'http';
+        fullUrl = `${protocol}://${host}${fullUrl}`;
+      }
+      
+      const url = new URL(fullUrl);
+      searchParams = url.searchParams;
+    } catch (urlError) {
+      console.error('Error parsing URL:', urlError);
+      return NextResponse.json(
+        { error: 'Invalid URL format' },
+        { status: 400 }
+      );
+    }
     
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '10');
     const category = searchParams.get('category');
     const status = searchParams.get('status');
     const search = searchParams.get('search');
+    
+    // Debug logging
+    console.log('Search params:', { page, limit, category, status, search });
     
     // Build query
     const query: any = {};
